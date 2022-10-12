@@ -59,7 +59,7 @@ impl RequestBuilder {
             .map(|url| {
                 let mut req = modio.inner.client.request(method, url);
 
-                if let (AuthMethod::Token, Some(Token { value, .. })) =
+                if let (AuthMethod::Token | AuthMethod::Any, Some(Token { value, .. })) =
                     (&auth_method, &modio.inner.credentials.token)
                 {
                     req = req.bearer_auth(value);
