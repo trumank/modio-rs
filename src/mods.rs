@@ -442,7 +442,7 @@ pub mod filters {
     pub use crate::filter::prelude::SubmittedBy;
 
     filter!(GameId, GAME_ID, "game_id", Eq, NotEq, In, Cmp, OrderBy);
-    filter!(Visible, VISIBLE, "visible", Eq);
+    filter!(Visible, VISIBLE, "visible", Eq, In);
     filter!(MaturityOption, MATURITY_OPTION, "maturity_option", Eq, Cmp, Bit);
     filter!(Summary, SUMMARY, "summary", Like);
     filter!(Description, DESCRIPTION, "description", Like);
