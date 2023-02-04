@@ -158,11 +158,14 @@ pub struct Dependency {
 
 /// See the [Mod Media Object](https://docs.mod.io/#mod-media-object) docs for more
 /// information.
+use serde_with;
 #[derive(Debug, Deserialize)]
+#[serde_with::serde_as]
 #[non_exhaustive]
 pub struct Media {
-    #[serde(default = "Vec::new")]
-    pub youtube: Vec<String>,
+    //#[serde_as(deserialize_as = "DefaultOnError")]
+    //#[serde(default = "Vec::new")]
+    //pub youtube: Vec<String>,
     #[serde(default = "Vec::new")]
     pub sketchfab: Vec<String>,
     #[serde(default = "Vec::new")]
