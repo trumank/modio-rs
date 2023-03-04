@@ -54,7 +54,11 @@ impl RequestBuilder {
         }
 
         let url = format!("{}{}", modio.inner.host, path);
-        let params = [("api_key", &modio.inner.credentials.api_key)];
+        let params = if modio.inner.credentials.token.is_some() {
+            vec![]
+        } else {
+            vec![("api_key", &modio.inner.credentials.api_key)]
+        };
         let request = Url::parse_with_params(&url, &params)
             .map(|url| {
                 let mut req = modio.inner.client.request(method, url);
