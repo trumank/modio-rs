@@ -225,12 +225,8 @@ pub(crate) fn terms_required() -> Error {
     )
 }
 
-pub(crate) fn builder_or_request(e: reqwest::Error) -> Error {
-    if e.is_builder() {
-        builder(e)
-    } else {
-        request(e)
-    }
+pub(crate) fn builder_or_request(e: reqwest_middleware::Error) -> Error {
+    request(e)
 }
 
 pub(crate) fn builder<E: Into<BoxError>>(e: E) -> Error {

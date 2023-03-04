@@ -162,8 +162,8 @@ mod prelude {
 pub mod lib {
     pub use reqwest::header;
     pub use reqwest::redirect::Policy;
-    pub use reqwest::ClientBuilder;
     #[cfg(feature = "__tls")]
     pub use reqwest::{Certificate, Identity};
     pub use reqwest::{Proxy, Url};
+    pub use reqwest_middleware::ClientBuilder;
 }

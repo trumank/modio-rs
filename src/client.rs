@@ -1,9 +1,10 @@
 use std::convert::TryInto;
 use std::sync::Arc;
 
-use ::reqwest::{Client, ClientBuilder, Proxy};
+use ::reqwest::Proxy;
 use http::header::USER_AGENT;
 use http::header::{HeaderMap, HeaderValue};
+use reqwest_middleware::ClientWithMiddleware as Client;
 
 use crate::auth::{Auth, Credentials, Token};
 use crate::download::{DownloadAction, Downloader};
@@ -18,7 +19,6 @@ use crate::{TargetPlatform, TargetPortal};
 
 const DEFAULT_HOST: &str = "https://api.mod.io/v1";
 const TEST_HOST: &str = "https://api.test.mod.io/v1";
-const DEFAULT_AGENT: &str = concat!(env!("CARGO_PKG_NAME"), '/', env!("CARGO_PKG_VERSION"));
 
 /// A `Builder` can be used to create a `Modio` client with custom configuration.
 #[must_use]
@@ -75,7 +75,7 @@ impl TargetPortal {
 struct Config {
     host: Option<String>,
     credentials: Credentials,
-    builder: Option<ClientBuilder>,
+    client: Client,
     headers: HeaderMap,
     proxies: Vec<Proxy>,
     #[cfg(feature = "__tls")]
@@ -109,12 +109,12 @@ impl Builder {
     /// Constructs a new `Builder`.
     ///
     /// This is the same as `Modio::builder(credentials)`.
-    pub fn new<C: Into<Credentials>>(credentials: C) -> Builder {
+    pub fn new<C: Into<Credentials>>(credentials: C, client: Client) -> Builder {
         Builder {
             config: Config {
                 host: None,
                 credentials: credentials.into(),
-                builder: None,
+                client,
                 headers: HeaderMap::new(),
                 proxies: Vec::new(),
                 #[cfg(feature = "__tls")]
@@ -135,52 +135,13 @@ impl Builder {
         let host = config.host.unwrap_or_else(|| DEFAULT_HOST.to_string());
         let credentials = config.credentials;
 
-        let client = {
-            let mut builder = {
-                let builder = config.builder.unwrap_or_else(Client::builder);
-                #[cfg(feature = "__tls")]
-                match config.tls {
-                    #[cfg(feature = "default-tls")]
-                    TlsBackend::Default => builder.use_native_tls(),
-                    #[cfg(feature = "rustls-tls")]
-                    TlsBackend::Rustls => builder.use_rustls_tls(),
-                }
-
-                #[cfg(not(feature = "__tls"))]
-                builder
-            };
-
-            let mut headers = config.headers;
-            if !headers.contains_key(USER_AGENT) {
-                headers.insert(USER_AGENT, HeaderValue::from_static(DEFAULT_AGENT));
-            }
-
-            for proxy in config.proxies {
-                builder = builder.proxy(proxy);
-            }
-
-            builder
-                .default_headers(headers)
-                .build()
-                .map_err(error::builder)?
-        };
-
         Ok(Modio {
             inner: Arc::new(ClientRef {
                 host,
-                client,
+                client: config.client,
                 credentials,
             }),
         })
-    }
-
-    /// Configure the underlying `reqwest` client using `reqwest::ClientBuilder`.
-    pub fn client<F>(mut self, f: F) -> Builder
-    where
-        F: FnOnce(ClientBuilder) -> ClientBuilder,
-    {
-        self.config.builder = Some(f(Client::builder()));
-        self
     }
 
     /// Set the mod.io api host.
@@ -274,25 +235,25 @@ impl Modio {
     /// Constructs a new `Builder` to configure a `Modio` client.
     ///
     /// This is the same as `Builder::new(credentials)`.
-    pub fn builder<C: Into<Credentials>>(credentials: C) -> Builder {
-        Builder::new(credentials)
+    pub fn builder<C: Into<Credentials>>(credentials: C, client: Client) -> Builder {
+        Builder::new(credentials, client)
     }
 
     /// Create an endpoint to [https://api.mod.io/v1](https://docs.mod.io/#mod-io-api-v1).
-    pub fn new<C>(credentials: C) -> Result<Self>
+    pub fn new<C>(credentials: C, client: Client) -> Result<Self>
     where
         C: Into<Credentials>,
     {
-        Builder::new(credentials).build()
+        Builder::new(credentials, client).build()
     }
 
     /// Create an endpoint to a different host.
-    pub fn host<H, C>(host: H, credentials: C) -> Result<Self>
+    pub fn host<H, C>(host: H, credentials: C, client: Client) -> Result<Self>
     where
         H: Into<String>,
         C: Into<Credentials>,
     {
-        Builder::new(credentials).host(host).build()
+        Builder::new(credentials, client).host(host).build()
     }
 
     /// Return an endpoint with new credentials.

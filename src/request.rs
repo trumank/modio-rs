@@ -39,7 +39,7 @@ mod headers {
 
 pub struct RequestBuilder {
     modio: Modio,
-    request: Result<reqwest::RequestBuilder>,
+    request: Result<reqwest_middleware::RequestBuilder>,
 }
 
 impl RequestBuilder {
